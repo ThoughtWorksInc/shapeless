@@ -301,6 +301,8 @@ trait Poly extends PolyApply with Serializable {
 object Poly extends PolyInst {
   implicit def inst0(p: Poly)(implicit cse : p.ProductCase[HNil]) : cse.Result = cse()
 
+  import PolyDefns._
+  
   final def bindFirst[Head](p: Poly, head: Head): BindFirst[p.type, Head] = new BindFirst[p.type, Head](head)
 
   final def curried(p: Poly): Curried[p.type, HNil] = new Curried[p.type, HNil](HNil)
