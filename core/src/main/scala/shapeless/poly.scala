@@ -114,6 +114,60 @@ object PolyDefns extends Cases {
       }
   }
 
+
+  final case class BindFirst[F, Head](head: Head) extends Poly
+
+  object BindFirst {
+    implicit def bindCase[BF, F, Head, Tail <: HList, Result0](
+        implicit unpack2: BF <:< BindFirst[F, Head],
+        witnessBF: Witness.Aux[BF],
+        finalCall: Case.Aux[F, Head :: Tail, Result0]): Case.Aux[BF, Tail, Result0] =
+      new Case[BF, Tail] {
+        override type Result = Result0
+        override val value: Tail => Result = { tail: Tail =>
+          finalCall.value(witnessBF.value.head :: tail)
+        }
+      }
+  }
+
+  final case class Curried[F, ParameterAccumulator <: HList](parameters: ParameterAccumulator) extends Poly1
+
+  private[PolyDefns] sealed trait LowPriorityCurried {
+
+    implicit def partialApplied[Self,
+                                F,
+                                ParameterAccumulator <: HList,
+                                CurrentParameter,
+                                AllParameters <: HList,
+                                RestParameters <: HList,
+                                CurrentLength <: Nat](
+        implicit constraint: Self <:< Curried[F, ParameterAccumulator],
+        witnessSelf: Witness.Aux[Self],
+        finalCall: Case[F, AllParameters],
+        length: ops.hlist.Length.Aux[CurrentParameter :: ParameterAccumulator, CurrentLength],
+        reverseSplit: ops.hlist.ReverseSplit.Aux[AllParameters,
+                                                 CurrentLength,
+                                                 CurrentParameter :: ParameterAccumulator,
+                                                 RestParameters],
+        hasRestParameters: RestParameters <:< (_ :: _)
+    ): Case1.Aux[Self, CurrentParameter, Curried[F, CurrentParameter :: ParameterAccumulator]] = Case1 {
+      nextParameter: CurrentParameter =>
+        Curried[F, CurrentParameter :: ParameterAccumulator](nextParameter :: witnessSelf.value.parameters)
+    }
+
+  }
+
+  object Curried extends LowPriorityCurried {
+    implicit def lastParameter[Self, F, LastParameter, ParameterAccumulator <: HList, AllParameters <: HList, Result0](
+        implicit constraint: Self <:< Curried[F, ParameterAccumulator],
+        witnessSelf: Witness.Aux[Self],
+        reverse: ops.hlist.Reverse.Aux[LastParameter :: ParameterAccumulator, AllParameters],
+        finalCall: Case.Aux[F, AllParameters, Result0]): Case1.Aux[Self, LastParameter, Result0] =
+      Case1 { lastParameter: LastParameter =>
+        finalCall(reverse(lastParameter :: witnessSelf.value.parameters))
+      }
+  }
+
   /**
    * Base class for lifting a `Function1` to a `Poly1`
    */
@@ -195,6 +249,10 @@ trait Poly extends PolyApply with Serializable {
   def rotateLeft[N <: Nat] = new RotateLeft[this.type, N](this)
 
   def rotateRight[N <: Nat] = new RotateRight[this.type, N](this)
+
+  final def bindFirst[Head](head: Head): BindFirst[this.type, Head] = new BindFirst[this.type, Head](head)
+
+  final def curried: Curried[this.type, HNil] = new Curried[this.type, HNil](HNil)
 
   /** The type of the case representing this polymorphic function at argument types `L`. */
   type ProductCase[L <: HList] = Case[this.type, L]
