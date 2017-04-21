@@ -250,10 +250,6 @@ trait Poly extends PolyApply with Serializable {
 
   def rotateRight[N <: Nat] = new RotateRight[this.type, N](this)
 
-  final def bindFirst[Head](head: Head): BindFirst[this.type, Head] = new BindFirst[this.type, Head](head)
-
-  final def curried: Curried[this.type, HNil] = new Curried[this.type, HNil](HNil)
-
   /** The type of the case representing this polymorphic function at argument types `L`. */
   type ProductCase[L <: HList] = Case[this.type, L]
   object ProductCase extends Serializable {
@@ -304,6 +300,11 @@ trait Poly extends PolyApply with Serializable {
  */
 object Poly extends PolyInst {
   implicit def inst0(p: Poly)(implicit cse : p.ProductCase[HNil]) : cse.Result = cse()
+
+  final def bindFirst[Head](p: Poly, head: Head): BindFirst[p.type, Head] = new BindFirst[p.type, Head](head)
+
+  final def curried(p: Poly): Curried[p.type, HNil] = new Curried[p.type, HNil](HNil)
+
 }
 
 /**
