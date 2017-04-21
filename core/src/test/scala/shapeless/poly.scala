@@ -438,8 +438,8 @@ class PolyTests {
     }
 
     val bf = p.bindFirst(2)
-    val r = bf(3.0, "bar")
-    assertTypedEquals[String]("2, 3.0, bar", r)
+    val r = bf(3.5, "bar")
+    assertTypedEquals[String]("2, 3.5, bar", r)
   }
 
   @Test
@@ -452,8 +452,8 @@ class PolyTests {
 
     val c = p.curried
     val c1 = c(1)
-    val c2 = c1(42.0)
+    val c2 = c1(42.5)
     val r = c2("foo")
-    assertTypedEquals[String]("1, 42.0, foo", r)
+    assertTypedEquals[String]("1, 42.5, foo", r)
   }
 }
