@@ -118,7 +118,7 @@ object PolyDefns extends Cases {
   final case class BindFirst[F, Head](head: Head) extends Poly
 
   object BindFirst {
-    implicit def bindCase[BF, F, Head, Tail <: HList, Result0](
+    implicit def bindFirstCase[BF, F, Head, Tail <: HList, Result0](
         implicit unpack2: BF <:< BindFirst[F, Head],
         witnessBF: Witness.Aux[BF],
         finalCall: Case.Aux[F, Head :: Tail, Result0]): Case.Aux[BF, Tail, Result0] =
